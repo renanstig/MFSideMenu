@@ -9,6 +9,7 @@
 #import "MFSideMenuContainerViewController.h"
 #import <QuartzCore/QuartzCore.h>
 
+
 NSString * const MFSideMenuStateNotificationEvent = @"MFSideMenuStateNotificationEvent";
 
 typedef enum {
@@ -46,6 +47,11 @@ typedef enum {
 @synthesize menuAnimationMaxDuration;
 @synthesize shadow;
 
+#define IS_IPHONE4 (([[UIScreen mainScreen] bounds].size.height-480)?NO:YES)
+#define IS_IPHONE5 (([[UIScreen mainScreen] bounds].size.height-568)?NO:YES)
+#define IS_IPHONE_6 (fabs((double)[[UIScreen mainScreen]bounds].size.height - (double)667) < DBL_EPSILON)
+#define IS_IPHONE_6_PLUS (fabs((double)[[UIScreen mainScreen]bounds].size.height - (double)736) < DBL_EPSILON)
+
 
 #pragma mark -
 #pragma mark - Initialization
@@ -79,7 +85,14 @@ typedef enum {
     
     self.menuContainerView = [[UIView alloc] init];
     self.menuState = MFSideMenuStateClosed;
-    self.menuWidth = 270.0f;
+    if (IS_IPHONE_6)
+    {
+        self.menuWidth =180.0f;
+    }
+    else
+    {
+        self.menuWidth = 250.0f;
+    }
     self.menuSlideAnimationFactor = 3.0f;
     self.menuAnimationDefaultDuration = 0.2f;
     self.menuAnimationMaxDuration = 0.4f;
@@ -131,13 +144,13 @@ typedef enum {
     if([self respondsToSelector:@selector(topLayoutGuide)]) {
         UIEdgeInsets insets = UIEdgeInsetsMake([self.topLayoutGuide length], 0, 0, 0);
         if(_leftSideMenuViewController &&
-            [_leftSideMenuViewController automaticallyAdjustsScrollViewInsets] &&
-            [_leftSideMenuViewController.view respondsToSelector:@selector(setContentInset:)]) {
+           [_leftSideMenuViewController automaticallyAdjustsScrollViewInsets] &&
+           [_leftSideMenuViewController.view respondsToSelector:@selector(setContentInset:)]) {
             [(UIScrollView *)_leftSideMenuViewController.view setContentInset:insets];
         }
         if(_rightSideMenuViewController &&
-            [_rightSideMenuViewController automaticallyAdjustsScrollViewInsets] &&
-            [_rightSideMenuViewController.view respondsToSelector:@selector(setContentInset:)]) {
+           [_rightSideMenuViewController automaticallyAdjustsScrollViewInsets] &&
+           [_rightSideMenuViewController.view respondsToSelector:@selector(setContentInset:)]) {
             [(UIScrollView *)_rightSideMenuViewController.view setContentInset:insets];
         }
     }
@@ -271,7 +284,7 @@ typedef enum {
 - (UIPanGestureRecognizer *)panGestureRecognizer {
     UIPanGestureRecognizer *recognizer = [[UIPanGestureRecognizer alloc]
                                           initWithTarget:self action:@selector(handlePan:)];
-	[recognizer setMaximumNumberOfTouches:1];
+    [recognizer setMaximumNumberOfTouches:1];
     [recognizer setDelegate:self];
     return recognizer;
 }
@@ -417,7 +430,7 @@ typedef enum {
     CGRect leftFrame = [self.leftMenuViewController view].frame;
     leftFrame.size.width = self.leftMenuWidth;
     leftFrame.origin.x = (self.menuSlideAnimationEnabled) ? -1*leftFrame.size.width / self.menuSlideAnimationFactor : 0;
-    leftFrame.origin.y = 0;
+    leftFrame.origin.y = -20;
     [self.leftMenuViewController view].frame = leftFrame;
     [self.leftMenuViewController view].autoresizingMask = UIViewAutoresizingFlexibleRightMargin|UIViewAutoresizingFlexibleHeight;
 }
@@ -426,7 +439,7 @@ typedef enum {
     if(!self.rightMenuViewController) return;
     CGRect rightFrame = [self.rightMenuViewController view].frame;
     rightFrame.size.width = self.rightMenuWidth;
-    rightFrame.origin.y = 0;
+    rightFrame.origin.y = -20;
     rightFrame.origin.x = self.menuContainerView.frame.size.width - self.rightMenuWidth;
     if(self.menuSlideAnimationEnabled) rightFrame.origin.x += self.rightMenuWidth / self.menuSlideAnimationFactor;
     [self.rightMenuViewController view].frame = rightFrame;
@@ -451,8 +464,8 @@ typedef enum {
     CGFloat xOffset = [self.centerViewController view].frame.origin.x;
     CGFloat xPositionDivider = (self.menuSlideAnimationEnabled) ? self.menuSlideAnimationFactor : 1.0;
     rightMenuFrame.origin.x = self.menuContainerView.frame.size.width - _rightMenuWidth
-        + xOffset / xPositionDivider
-        + _rightMenuWidth / xPositionDivider;
+    + xOffset / xPositionDivider
+    + _rightMenuWidth / xPositionDivider;
     
     [self.rightMenuViewController view].frame = rightMenuFrame;
 }
@@ -535,7 +548,7 @@ typedef enum {
             return [self centerViewControllerPanEnabled];
         
         if([gestureRecognizer.view isEqual:self.menuContainerView])
-           return [self sideMenuPanEnabled];
+            return [self sideMenuPanEnabled];
         
         // pan gesture is attached to a custom view
         return YES;
@@ -547,7 +560,7 @@ typedef enum {
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
     if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         CGPoint velocity = [(UIPanGestureRecognizer *)gestureRecognizer velocityInView:gestureRecognizer.view];
-        BOOL isHorizontalPanning = fabsf(velocity.x) > fabsf(velocity.y);
+        BOOL isHorizontalPanning = fabs(velocity.x) > fabs(velocity.y);
         return isHorizontalPanning;
     }
     return YES;
@@ -555,7 +568,7 @@ typedef enum {
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
 shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-	return NO;
+    return NO;
 }
 
 
@@ -567,11 +580,11 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
 - (void) handlePan:(UIPanGestureRecognizer *)recognizer {
     UIView *view = [self.centerViewController view];
     
-	if(recognizer.state == UIGestureRecognizerStateBegan) {
+    if(recognizer.state == UIGestureRecognizerStateBegan) {
         // remember where the pan started
         panGestureOrigin = view.frame.origin;
         self.panDirection = MFSideMenuPanDirectionNone;
-	}
+    }
     
     if(self.panDirection == MFSideMenuPanDirectionNone) {
         CGPoint translatedPoint = [recognizer translationInView:view];
@@ -648,7 +661,7 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
         }
         
         self.panDirection = MFSideMenuPanDirectionNone;
-	} else {
+    } else {
         [self setCenterViewControllerOffset:translatedPoint.x];
     }
 }
@@ -675,7 +688,7 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
     
     [self setCenterViewControllerOffset:translatedPoint.x];
     
-	if(recognizer.state == UIGestureRecognizerStateEnded) {
+    if(recognizer.state == UIGestureRecognizerStateEnded) {
         CGPoint velocity = [recognizer velocityInView:view];
         CGFloat finalX = translatedPoint.x + (.35*velocity.x);
         CGFloat viewWidth = view.frame.size.width;
@@ -699,7 +712,7 @@ shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherG
                 [self setCenterViewControllerOffset:adjustedOrigin.x animated:YES completion:nil];
             }
         }
-	} else {
+    } else {
         [self setCenterViewControllerOffset:translatedPoint.x];
     }
 }

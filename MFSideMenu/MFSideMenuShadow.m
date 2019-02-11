@@ -82,10 +82,22 @@
     CGRect pathRect = self.shadowedView.bounds;
     pathRect.size = self.shadowedView.frame.size;
     self.shadowedView.layer.shadowPath = [UIBezierPath bezierPathWithRect:pathRect].CGPath;
-    self.shadowedView.layer.shadowOpacity = self.opacity;
-    self.shadowedView.layer.shadowRadius = self.radius;
-    self.shadowedView.layer.shadowColor = [self.color CGColor];
-    self.shadowedView.layer.rasterizationScale = [[UIScreen mainScreen] scale];
+    
+    CALayer *rightBorder = [CALayer layer];
+    rightBorder.borderColor = [[UIColor colorWithRed:120.0/255.0 green:120.0/255.0 blue:135/255.0 alpha:1.0] CGColor];
+    rightBorder.borderWidth = 0.5;
+    rightBorder.frame = CGRectMake(0, 60, 0.5, pathRect.size.height);
+    
+    [self.shadowedView.layer addSublayer:rightBorder];
+    
+    
+    //    self.shadowedView.layer.borderWidth = 0.5;
+    //    self.shadowedView.layer.borderColor =
+    
+    //self.shadowedView.layer.shadowOpacity = self.opacity;
+    //self.shadowedView.layer.shadowRadius = self.radius;
+    //self.shadowedView.layer.shadowColor = [self.color CGColor];
+    //self.shadowedView.layer.rasterizationScale = [[UIScreen mainScreen] scale];
 }
 
 - (void)hide {
